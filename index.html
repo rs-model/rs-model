@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Notes</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom right, #3a6073, #3a947d);
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .container {
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 15px;
+            margin: 50px auto;
+            max-width: 900px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        .class-container, .subject-container, .file-container {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background-color: #ff5722;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #ff7043;
+        }
+
+        .btn-secondary {
+            background-color: #4CAF50;
+            border: none;
+        }
+
+        .btn-secondary:hover {
+            background-color: #66bb6a;
+        }
+
+        .school-info {
+            margin-top: 20px;
+            text-align: center;
+            color: #2e7d32;
+        }
+
+        a {
+            color: #ffeb3b;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .spinner-border {
+            display: none;
+        }
+
+        .loading .spinner-border {
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>R.S. Model Senior Secondary School</h1>
+        <p class="school-info">Located in Shashtri Nagar, Ludhiana, Punjab <br> Managed by Arya Samaj Model Town</p>
+        
+        <div id="class-container" class="class-container text-center">
+            <h2>Select Your Class</h2>
+            <button class="btn btn-primary m-2" onclick="selectClass('9th-class')">9th Class</button>
+            <button class="btn btn-primary m-2" onclick="selectClass('10th-class')">10th Class</button>
+            <button class="btn btn-primary m-2" onclick="selectClass('11th-class')">11th Class</button>
+            <button class="btn btn-primary m-2" onclick="selectClass('12th-class')">12th Class</button>
+        </div>
+
+        <div id="subject-container" class="subject-container text-center hidden">
+            <h2>Select Subject</h2>
+            <div id="subject-buttons" class="d-flex flex-wrap justify-content-center"></div>
+        </div>
+
+        <div id="file-list" class="file-container hidden"></div>
+        <div class="text-center">
+            <div class="spinner-border text-warning" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const subjects = {
+            "9th-class": ["English", "Hindi", "Punjabi", "Social-Studies", "Science", "Maths"],
+            "10th-class": ["English", "Hindi", "Punjabi", "Social-Studies", "Science", "Maths"],
+            "11th-class": ["English", "Punjabi", "Mathematics", "Chemistry", "Physics", "Biology", "Accounts", "Economics", "Political-Science"],
+            "12th-class": ["English", "Punjabi", "Mathematics", "Chemistry", "Physics", "Biology", "Accounts", "Economics", "Political-Science"]
+        };
+
+        function selectClass(className) {
+            document.getElementById("class-container").classList.add("hidden");
+            document.getElementById("subject-container").classList.remove("hidden");
+
+            const subjectButtons = document.getElementById("subject-buttons");
+            subjectButtons.innerHTML = '';  // Clear previous buttons
+
+            subjects[className].forEach(subject => {
+                const button = document.createElement("button");
+                button.className = "btn btn-secondary m-2";
+                button.textContent = subject;
+                button.onclick = () => loadFiles(className, subject);
+                subjectButtons.appendChild(button);
+            });
+        }
+
+        function loadFiles(className, subject) {
+            const fileListDiv = document.getElementById("file-list");
+            const spinner = document.querySelector('.spinner-border');
+
+            fileListDiv.innerHTML = '';
+            spinner.parentElement.classList.add('loading');
+
+            fetchFiles(className, subject)
+                .then(files => {
+                    spinner.parentElement.classList.remove('loading');
+                    fileListDiv.classList.remove("hidden");
+
+                    if (files.length > 0) {
+                        const list = document.createElement("ul");
+                        list.className = "list-group";
+                        files.forEach(file => {
+                            const listItem = document.createElement("li");
+                            listItem.className = "list-group-item bg-dark text-white";
+                            const link = document.createElement("a");
+                            link.href = file.download_url; 
+                            link.textContent = file.name; 
+                            link.target = "_blank"; 
+                            link.className = "stretched-link";
+                            listItem.appendChild(link);
+                            list.appendChild(listItem);
+                        });
+                        fileListDiv.appendChild(list);
+                    } else {
+                        fileListDiv.innerHTML = '<div class="alert alert-warning">No files found.</div>';
+                    }
+                })
+                .catch(error => {
+                    spinner.parentElement.classList.remove('loading');
+                    fileListDiv.innerHTML = '<div class="alert alert-danger">Error loading files.</div>';
+                });
+        }
+
+        async function fetchFiles(className, subject) {
+            const url = `https://api.github.com/repos/DEEPAKMATHUR0/Notes/contents/${className}/${subject}`;
+            const response = await fetch(url);
+            const files = await response.json();
+            const pdfFiles = files.filter(file => file.name.endsWith('.pdf'));
+            return pdfFiles; 
+        }
+    </script>
+</body>
+</html>
